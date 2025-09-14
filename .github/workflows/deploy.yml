@@ -1,3 +1,4 @@
+# DEVOPS
 name: CI/CD Deploy Gestocol (frontend only)
 
 on:
@@ -25,8 +26,9 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend   # ⚠️ adapte si ton React est à la racine ou dans src/main/webapp
-          npm install
-          npm run build
+          npm ci        # plus fiable que npm install en CI
+          px react-scripts build
+
 
       # 4. Configurer SSH
       - name: Setup SSH
