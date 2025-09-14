@@ -22,13 +22,15 @@ jobs:
         with:
           node-version: '18'
 
+
       # 3. Build du frontend
       - name: Build frontend
         run: |
-          cd frontend   # ⚠️ adapte si ton React est à la racine ou dans src/main/webapp
-          npm ci        # plus fiable que npm install en CI
-          px react-scripts build
-
+          cd frontend   # adapte si ton React est à la racine ou dans src/main/webapp
+          npm ci        # installe les dépendances proprement
+          npm run build # lance Vite pour construire le frontend
+      
+      
 
       # 4. Configurer SSH
       - name: Setup SSH
