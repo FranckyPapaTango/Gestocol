@@ -8,5 +8,29 @@
 <body>
 <div id="root"></div>
 <script type="module" src="/src/index.tsx"></script>
+<script type="text/javascript">
+    (function () {
+      // On attend que toute la page et React soient prêts
+      window.addEventListener('load', function () {
+        if (!sessionStorage.getItem('popunderShown')) {
+          document.body.addEventListener(
+            'click',
+            function handler(e) {
+              // Ouverture dans un nouvel onglet
+              window.open('https://otieu.com/4/9872987', '_blank');
+
+              // Marqueur pour éviter de le relancer
+              sessionStorage.setItem('popunderShown', 'true');
+
+              // On supprime l'écouteur après le premier clic
+              document.body.removeEventListener('click', handler);
+            },
+            { once: true },
+          );
+        }
+      });
+    })();
+</script>
+
 </body>
 </html>
