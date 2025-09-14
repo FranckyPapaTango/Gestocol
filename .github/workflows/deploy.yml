@@ -4,7 +4,7 @@ name: CI/CD Deploy Gestocol (frontend only)
 on:
   push:
     branches:
-      - main   # ou master selon ta branche par défaut
+      - master   # ou master selon ta branche par défaut
   workflow_dispatch:
 
 jobs:
