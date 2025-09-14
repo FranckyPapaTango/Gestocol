@@ -1,1 +1,47 @@
-//.github/workflows/deploy.yml
+name: CI/CD Deploy Gestocol (frontend only)
+
+on:
+  push:
+    branches:
+      - main   # ou master selon ta branche par défaut
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupérer le code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Installer Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3. Build du frontend
+      - name: Build frontend
+        run: |
+          cd frontend   # ⚠️ adapte si ton React est à la racine ou dans src/main/webapp
+          npm install
+          npm run build
+
+      # 4. Configurer SSH
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      # 5. Ajouter le serveur aux known_hosts
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      # 6. Déployer les fichiers buildés
+      - name: Upload frontend static
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "rm -rf /var/www/gestocol/*"
+          scp -r frontend/build/* ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/gestocol/
