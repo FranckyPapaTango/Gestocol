@@ -68,7 +68,13 @@ jobs:
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "rm -rf /var/www/gestocol/*"
           scp -r frontend/build/* ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/gestocol/
 
-      # 10. Déploiement backend + rollback + fallback
+      # 10. Upload backend tar.gz
+      - name: Upload backend archive
+        run: |
+          scp backend/gestocol-backend.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/gestocol-backend.tar.gz
+
+
+      # 11. Déploiement backend + rollback + fallback
       - name: Deploy backend
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<'EOF'
