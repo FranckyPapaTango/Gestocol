@@ -101,7 +101,7 @@ jobs:
             echo "🚀 Lancement du backend FastAPI avec uvicorn..."
             pkill -f "uvicorn.*gestocol" || true
 
-            if ! (nohup uvicorn main:app --host 0.0.0.0 --port 8082 > "$LOG_PATH" 2>&1 & sleep 5 && pgrep -f "uvicorn.*gestocol" > /dev/null); then
+            if ! (nohup uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 & sleep 5 && pgrep -f "uvicorn.*gestocol" > /dev/null); then
               echo "❌ Échec du démarrage du backend, rollback..."
 
               if [ -d "$BACKUP_DIR/backup_backend" ]; then
@@ -109,7 +109,7 @@ jobs:
                 rm -rf "$BACKEND_DIR"
                 mv "$BACKUP_DIR/backup_backend" "$BACKEND_DIR"
 
-                nohup uvicorn main:app --host 0.0.0.0 --port 8082 > "$LOG_PATH" 2>&1 &
+                nohup uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
                 echo "✅ Backend rollback lancé en nohup. Logs -> $LOG_PATH"
               fi
             else
