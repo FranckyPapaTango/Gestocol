@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
+      # 1. Récupérer le code
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -44,11 +44,12 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 6. Build / package backend (optionnel, ex: tar)
+      # 6. Build / package backend (tar)
       - name: Package backend
         run: |
           cd backend
-          tar -czf /tmp/gestocol-backend.tar.gz .
+          # Crée le tar dans le dossier backend
+          tar -czf gestocol-backend.tar.gz .
 
       # 7. Configurer SSH
       - name: Setup SSH
@@ -72,7 +73,6 @@ jobs:
       - name: Upload backend archive
         run: |
           scp backend/gestocol-backend.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/gestocol-backend.tar.gz
-
 
       # 11. Déploiement backend + rollback + fallback
       - name: Deploy backend
