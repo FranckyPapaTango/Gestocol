@@ -76,62 +76,61 @@ jobs:
       # 11. Déploiement backend + rollback + gestion venv & .env
       - name: Deploy backend
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<'EOF'
-  set -e
-  
-  BACKEND_DIR="/opt/gestocol/backend"
-  BACKUP_DIR="/opt/gestocol/backup"
-  TMP_ARCHIVE="/tmp/gestocol-backend.tar.gz"
-  LOG_PATH="/opt/gestocol/backend.log"
-  
-  # Variables PostgreSQL depuis secrets
-  POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
-  POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-  POSTGRES_HOST="${{ secrets.POSTGRES_HOST }}"
-  POSTGRES_PORT="${{ secrets.POSTGRES_PORT }}"
-  POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
-  
-  echo "📦 Sauvegarde du backend actuel..."
-  mkdir -p "$BACKUP_DIR"
-  if [ -d "$BACKEND_DIR" ]; then
-  rm -rf "$BACKUP_DIR/backup_backend"
-  cp -r "$BACKEND_DIR" "$BACKUP_DIR/backup_backend"
-  fi
-  
-  echo "🗑 Suppression de l'ancien backend..."
-  rm -rf "$BACKEND_DIR"
-  
-  echo "📤 Déploiement du nouveau backend..."
-  mkdir -p "$BACKEND_DIR"
-  tar -xzf "$TMP_ARCHIVE" -C "$BACKEND_DIR"
-  
-  echo "🌿 Création du fichier .env"
-  cat > "$BACKEND_DIR/.env" <<ENV_EOF
-  POSTGRES_USER=$POSTGRES_USER
-  POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-  POSTGRES_HOST=$POSTGRES_HOST
-  POSTGRES_PORT=$POSTGRES_PORT
-  POSTGRES_DB=$POSTGRES_DB
-  ENV_EOF
-  
-  echo "🖥 Création / activation du venv et installation deps"
-  python3 -m venv "$BACKEND_DIR/venv"
-  source "$BACKEND_DIR/venv/bin/activate"
-  pip install --upgrade pip
-  pip install -r "$BACKEND_DIR/requirements.txt"
-  
-  echo "🚀 Lancement du backend FastAPI avec uvicorn..."
-  pkill -f "uvicorn.*gestocol" || true
-  if ! (nohup uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 & sleep 5 && pgrep -f "uvicorn.*gestocol" > /dev/null); then
-  echo "❌ Échec du démarrage du backend, rollback..."
-  if [ -d "$BACKUP_DIR/backup_backend" ]; then
-  echo "⚠️ Rollback du backend précédent..."
-  rm -rf "$BACKEND_DIR"
-  mv "$BACKUP_DIR/backup_backend" "$BACKEND_DIR"
-  nohup uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
-  echo "✅ Backend rollback lancé en nohup. Logs -> $LOG_PATH"
-  fi
-  else
-  echo "✅ Backend lancé correctement."
-  fi
-  EOF
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash <<'EOF'
+          set -e
+          
+          BACKEND_DIR="/opt/gestocol/backend"
+          BACKUP_DIR="/opt/gestocol/backup"
+          TMP_ARCHIVE="/tmp/gestocol-backend.tar.gz"
+          LOG_PATH="/opt/gestocol/backend.log"
+          
+          POSTGRES_USER="${POSTGRES_USER}"
+          POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
+          POSTGRES_HOST="${POSTGRES_HOST}"
+          POSTGRES_PORT="${POSTGRES_PORT}"
+          POSTGRES_DB="${POSTGRES_DB}"
+          
+          echo "📦 Sauvegarde du backend actuel..."
+          mkdir -p "$BACKUP_DIR"
+          if [ -d "$BACKEND_DIR" ]; then
+          rm -rf "$BACKUP_DIR/backup_backend"
+          cp -r "$BACKEND_DIR" "$BACKUP_DIR/backup_backend"
+          fi
+          
+          echo "🗑 Suppression de l'ancien backend..."
+          rm -rf "$BACKEND_DIR"
+          
+          echo "📤 Déploiement du nouveau backend..."
+          mkdir -p "$BACKEND_DIR"
+          tar -xzf "$TMP_ARCHIVE" -C "$BACKEND_DIR"
+          
+          echo "🌿 Création du fichier .env"
+          cat > "$BACKEND_DIR/.env" <<ENV_EOF
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          ENV_EOF
+          
+          echo "🖥 Création / activation du venv et installation deps"
+          python3 -m venv "$BACKEND_DIR/venv"
+          source "$BACKEND_DIR/venv/bin/activate"
+          pip install --upgrade pip
+          pip install -r "$BACKEND_DIR/requirements.txt"
+          
+          echo "🚀 Lancement du backend FastAPI avec uvicorn..."
+          pkill -f "uvicorn.*gestocol" || true
+          if ! (nohup uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 & sleep 5 && pgrep -f "uvicorn.*gestocol" > /dev/null); then
+          echo "❌ Échec du démarrage du backend, rollback..."
+          if [ -d "$BACKUP_DIR/backup_backend" ]; then
+          echo "⚠️ Rollback du backend précédent..."
+          rm -rf "$BACKEND_DIR"
+          mv "$BACKUP_DIR/backup_backend" "$BACKEND_DIR"
+          nohup uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
+          echo "✅ Backend rollback lancé en nohup. Logs -> $LOG_PATH"
+          fi
+          else
+          echo "✅ Backend lancé correctement."
+          fi
+          EOF
