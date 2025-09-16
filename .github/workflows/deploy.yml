@@ -44,12 +44,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 6. Build / package backend (tar)
+      # 6. Build / package backend (tar dans /tmp)
       - name: Package backend
         run: |
           cd backend
-          # Crée le tar dans le dossier backend
-          tar -czf gestocol-backend.tar.gz .
+          tar -czf /tmp/gestocol-backend.tar.gz .
 
       # 7. Configurer SSH
       - name: Setup SSH
@@ -72,7 +71,7 @@ jobs:
       # 10. Upload backend tar.gz
       - name: Upload backend archive
         run: |
-          scp backend/gestocol-backend.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/gestocol-backend.tar.gz
+          scp /tmp/gestocol-backend.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/gestocol-backend.tar.gz
 
       # 11. Déploiement backend + rollback + fallback
       - name: Deploy backend
