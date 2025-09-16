@@ -1,10 +1,10 @@
-# DEVOPS
-name: CI/CD Deploy Gestocol (frontend only)
+# DEVOPS : CI/CD frontend + backend FastAPI
+name: CI/CD Deploy Gestocol (Full stack)
 
 on:
   push:
     branches:
-      - master   # ou master selon ta branche par défaut
+      - master
   workflow_dispatch:
 
 jobs:
@@ -12,40 +12,102 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Récupérer le code
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Installer Node.js
+      # 2. Installer Node.js (Frontend)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-
-      # 3. Build du frontend
+      # 3. Build frontend
       - name: Build frontend
         run: |
-          cd frontend   # adapte si ton React est à la racine ou dans src/main/webapp
-          npm ci        # installe les dépendances proprement
-          npm run build # lance Vite pour construire le frontend
-      
-      
+          cd frontend
+          npm ci
+          npm run build
 
-      # 4. Configurer SSH
+      # 4. Installer Python 3.11 (Backend)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 5. Installer les dépendances backend
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 6. Build / package backend (optionnel, ex: tar)
+      - name: Package backend
+        run: |
+          cd backend
+          tar -czf /tmp/gestocol-backend.tar.gz .
+
+      # 7. Configurer SSH
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
-      # 5. Ajouter le serveur aux known_hosts
+      # 8. Ajouter le serveur aux known_hosts
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      # 6. Déployer les fichiers buildés
+      # 9. Déploiement frontend
       - name: Upload frontend static
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "rm -rf /var/www/gestocol/*"
           scp -r frontend/build/* ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/gestocol/
+
+      # 10. Déploiement backend + rollback + fallback
+      - name: Deploy backend
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<'EOF'
+            set -e
+
+            BACKEND_DIR="/opt/gestocol/backend"
+            BACKUP_DIR="/opt/gestocol/backup"
+            TMP_ARCHIVE="/tmp/gestocol-backend.tar.gz"
+            LOG_PATH="/opt/gestocol/backend.log"
+
+            echo "📦 Sauvegarde du backend actuel..."
+            mkdir -p "$BACKUP_DIR"
+            if [ -d "$BACKEND_DIR" ]; then
+              rm -rf "$BACKUP_DIR/backup_backend"
+              cp -r "$BACKEND_DIR" "$BACKUP_DIR/backup_backend"
+            fi
+
+            echo "🗑 Suppression de l'ancien backend..."
+            rm -rf "$BACKEND_DIR"
+
+            echo "📤 Déploiement du nouveau backend..."
+            mkdir -p "$BACKEND_DIR"
+            tar -xzf "$TMP_ARCHIVE" -C "$BACKEND_DIR"
+
+            echo "🚀 Lancement du backend FastAPI avec uvicorn..."
+            pkill -f "uvicorn.*gestocol" || true
+
+            if ! (nohup uvicorn main:app --host 0.0.0.0 --port 8082 > "$LOG_PATH" 2>&1 & sleep 5 && pgrep -f "uvicorn.*gestocol" > /dev/null); then
+              echo "❌ Échec du démarrage du backend, rollback..."
+
+              if [ -d "$BACKUP_DIR/backup_backend" ]; then
+                echo "⚠️ Rollback du backend précédent..."
+                rm -rf "$BACKEND_DIR"
+                mv "$BACKUP_DIR/backup_backend" "$BACKEND_DIR"
+
+                nohup uvicorn main:app --host 0.0.0.0 --port 8082 > "$LOG_PATH" 2>&1 &
+                echo "✅ Backend rollback lancé en nohup. Logs -> $LOG_PATH"
+              fi
+            else
+              echo "✅ Backend lancé correctement."
+            fi
+          EOF
