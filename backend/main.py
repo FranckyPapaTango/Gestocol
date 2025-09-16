@@ -16,7 +16,9 @@ app = FastAPI(title="Gestocol API", version="1.0.0")
 
 # CORS : autoriser ton frontend dev React
 origins = [
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "https://gestocol.rafaros-it.fr",      # sans www
+    "https://www.gestocol.rafaros-it.fr",  # avec www
 ]
 
 app.add_middleware(

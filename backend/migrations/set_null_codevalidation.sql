@@ -10,7 +10,8 @@
 
 --            \i 'C:/Users/mashk/IdeaProjects/Gestocol/backend/migrations/set_null_codevalidation.sql'
 
-
+-- en remote :
+--             copier le SQL et l'exécuter
 
 -- Vérifie la contrainte :
 
