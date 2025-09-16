@@ -9,26 +9,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# create tables (simple approach)
+# create tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Gestocol API", version="1.0.0")
 
-# CORS setup
-origins = []
-cors_env = os.getenv("CORS_ORIGINS")
-if cors_env:
-    origins = [o.strip() for o in cors_env.split(",") if o.strip()]
+# CORS : autoriser ton frontend dev React
+origins = [
+    "http://localhost:3000"
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins or ["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Dependency
+# DB dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -36,7 +35,6 @@ def get_db():
     finally:
         db.close()
 
-# Base path for CodeValidation CRUD
 BASE = "/api/codevalidations"
 
 @app.get(BASE + "/", response_model=list[schemas.CodeValidation])
@@ -52,7 +50,12 @@ def read_codevalidation(cv_id: int, db: Session = Depends(get_db)):
 
 @app.post(BASE + "/", response_model=schemas.CodeValidation, status_code=201)
 def create_codevalidation(cv: schemas.CodeValidationCreate, db: Session = Depends(get_db)):
-    return crud.create_codevalidation(db, cv)
+    try:
+        return crud.create_codevalidation(db, cv)
+    except Exception as e:
+        # Logger l’erreur pour debug
+        print("Erreur lors de la création :", e)
+        raise HTTPException(status_code=500, detail="Impossible de créer le CodeValidation")
 
 @app.put(BASE + "/{cv_id}", response_model=schemas.CodeValidation)
 def update_codevalidation(cv_id: int, cv: schemas.CodeValidationUpdate, db: Session = Depends(get_db)):

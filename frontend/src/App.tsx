@@ -1,4 +1,3 @@
-import ProductsPage from "./pages/ProductsPage";
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
@@ -6,22 +5,31 @@ import AboutUs from './pages/AboutUs';
 import Tracking from './pages/Tracking';
 import SuivreColis from './pages/SuivreColis';
 import CrudGestion from './pages/CrudGestion';
-import CrudBarMenu from './components/CrudBarMenu';
-
+import CodeValidationList from './pages/CodeValidation/CodeValidationList';
+import CodeValidationForm from './pages/CodeValidation/CodeValidationForm';
+// Ajoute ici les autres pages CRUD comme ColisList, DestinataireList, etc.
 
 const App = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/products" element={<ProductsPage />} />
         <Route path="/aboutUs" element={<AboutUs />} />
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/suivreColis" element={<SuivreColis />} />
-        <Route path="/crudgestion" element={<CrudGestion />} />
-        <Route path="crud" element={<CrudBarMenu />} />
 
-        {/* Ajoute d’autres pages ici */}
+        {/* Layout CRUD avec menu commun */}
+        <Route path="/crudgestion" element={<CrudGestion />}>
+          {/* <Route index element={<CodeValidationList />} />            // par défaut */}
+          <Route path="codevalidations" element={<CodeValidationList />} />
+          <Route path="codevalidations/new" element={<CodeValidationForm />} />
+          <Route path="codevalidations/:id/edit" element={<CodeValidationForm />} />
+
+          {/* Ajoute ici les autres enfants CRUD */}
+          {/* <Route path="colis-list" element={<ColisList />} /> */}
+          {/* <Route path="destinataire-list" element={<DestinataireList />} /> */}
+          {/* etc. */}
+        </Route>
       </Routes>
     </Router>
   );

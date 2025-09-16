@@ -1,24 +1,28 @@
 // src/components/CrudBarMenu.tsx
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Link } from 'react-router-dom';
 
-const CrudBarMenu: React.FC = () => {
-  // Liste des items du menu
+interface CrudBarMenuProps {
+  onSelect?: (module: string) => void; // prop optionnelle
+}
+
+const CrudBarMenu: React.FC<CrudBarMenuProps> = ({ onSelect }) => {
   const items = [
-    { path: '/codevalidation-list', label: 'Codes de Validation' },
-    { path: '/colis-list', label: 'Colis' },
-    { path: '/destinataire-list', label: 'Destinataires' },
-    { path: '/expediteur-list', label: 'Expéditeurs' },
-    { path: '/facture-list', label: 'Factures' },
-    { path: '/livreur-list', label: 'Livreurs' },
-    { path: '/pointscanoblig-list', label: 'Points de Scan Obligatoires' },
-    { path: '/tracker-list', label: 'Trackers' },
-    { path: '/vehicule-list', label: 'Véhicules' },
-    { path: '/delaienvoi-list', label: 'Délais d\'Envoi' },
-    { path: '/statutcolis-list', label: 'Statuts de Colis' },
-    { path: '/typephysique-list', label: 'Types Physiques de Colis' },
-    { path: '/pieceidentite-list', label: 'Types de Pièce d\'Identité' },
-    { path: '/role-list', label: 'Types de Rôles' },
+    { path: 'codevalidations', label: 'Codes de Validation' },
+    { path: 'coliss', label: 'Colis' },
+    { path: 'destinataires', label: 'Destinataires' },
+    { path: 'expediteurs', label: 'Expéditeurs' },
+    { path: 'factures', label: 'Factures' },
+    { path: 'livreurs', label: 'Livreurs' },
+    { path: 'pointscanobligs', label: 'Points de Scan Obligatoires' },
+    { path: 'trackers', label: 'Trackers' },
+    { path: 'vehicules', label: 'Véhicules' },
+    { path: 'delaienvois', label: "Délais d'Envoi" },
+    { path: 'statutcoliss', label: 'Statuts de Colis' },
+    { path: 'typephysiques', label: 'Types Physiques de Colis' },
+    { path: 'pieceidentites', label: "Types de Pièce d'Identité" },
+    { path: 'role-list', label: 'Types de Rôles' },
   ];
 
   return (
@@ -32,9 +36,22 @@ const CrudBarMenu: React.FC = () => {
           <div className="col-lg-3 col-md-4 col-sm-6 mb-3" key={index}>
             <div className="card h-100">
               <div className="card-body d-flex align-items-center justify-content-center">
-                <a href={item.path} className="btn btn-primary btn-block w-100">
-                  {item.label}
-                </a>
+                {/* Si onSelect est défini, on l'appelle sinon on utilise Link */}
+                {onSelect ? (
+                  <button
+                    className="btn btn-primary btn-block w-100"
+                    onClick={() => onSelect(item.path)}
+                  >
+                    {item.label}
+                  </button>
+                ) : (
+                  <Link
+                    to={`/crudgestion/${item.path}`}
+                    className="btn btn-primary btn-block w-100"
+                  >
+                    {item.label}
+                  </Link>
+                )}
               </div>
             </div>
           </div>

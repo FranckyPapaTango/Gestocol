@@ -80,6 +80,7 @@ cd C:\Users\mashk\IdeaProjects\Gestocol\backend
 cd C:\Users\mashk\IdeaProjects\Gestocol\backend
 source .venv/bin/activate
 
+
 # requirements :
 cd backend
 pip install -r requirements.txt
@@ -91,7 +92,10 @@ pip install -r requirements.txt
 
 ## Lancer l'API :
 ## Lancer le backend
+cd C:\Users\mashk\IdeaProjects\Gestocol\backend
+.\.venv\Scripts\Activate
 uvicorn main:app --reload --host 0.0.0.0 --port 8083
+# ou :
 uvicorn main:app --reload  --port 8083
 
 ## Lancer le frontend
