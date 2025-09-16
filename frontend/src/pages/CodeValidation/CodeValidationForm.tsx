@@ -4,7 +4,9 @@ import axios from 'axios';
 import { CodeValidation } from './types';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const API = import.meta.env.VITE_API_BASE || "http://localhost:8083/api";
+// const API = import.meta.env.VITE_API_BASE || "http://localhost:8083/api";
+const API = import.meta.env.VITE_API_BASE;
+
 
 export default function CodeValidationForm() {
   const navigate = useNavigate();
