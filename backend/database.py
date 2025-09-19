@@ -16,19 +16,21 @@ port = os.getenv("POSTGRES_PORT", "5432")
 db = os.getenv("POSTGRES_DB", "gestocol")
 
 # Construction de l'URL compatible SQLAlchemy
-# DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+DATABASE_URL = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
 
 # Création de l'engine
-# engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-
-# from sqlalchemy import create_engine
-
-DATABASE_URL = "postgresql+psycopg2://root:root1A%40@127.0.0.1:5432/gestocol"
-engine = create_engine(DATABASE_URL)
-
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Fabrique de sessions
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base déclarative pour tes modèles
 Base = declarative_base()
+
+# ✅ Fonction utilitaire pour FastAPI
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

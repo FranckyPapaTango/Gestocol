@@ -9,6 +9,8 @@ import CodeValidationList from './pages/CodeValidation/CodeValidationList';
 import CodeValidationForm from './pages/CodeValidation/CodeValidationForm';
 import ColisList from './pages/Colis/ColisList';
 import ColisForm from './pages/Colis/ColisForm';
+import TypePhysiqueList from './pages/TypePhysique/TypePhysiqueList';
+import TypePhysiqueForm from './pages/TypePhysique/TypePhysiqueForm';
 
 
 // Ajoute ici les autres pages CRUD comme ColisList, DestinataireList, etc.
@@ -33,6 +35,11 @@ const App = () => {
           <Route path="coliss" element={<ColisList />} />
           <Route path="colis/new" element={<ColisForm />} />
           <Route path="colis/:id/edit" element={<ColisForm />} />
+
+          <Route path="typephysiques" element={<TypePhysiqueList />} />
+          <Route path="typephysiques/new" element={<TypePhysiqueForm />} />
+          <Route path="typephysiques/:id/edit" element={<TypePhysiqueForm />} />
+
           {/* <Route path="destinataire-list" element={<DestinataireList />} /> */}
           {/* etc. */}
         </Route>

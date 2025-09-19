@@ -29,74 +29,62 @@ jobs:
           npm ci
           npm run build
 
-      # 4. Installer Python 3.11 (Backend)
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      # ⚠️ On n’installe PAS Python sur le runner pour PROD (supprimé)
 
-      # 5. Installer les dépendances backend localement pour packaging
-      - name: Install backend dependencies locally
-        run: |
-          cd backend
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # 6. Build / package backend (tar dans /tmp)
+      # 4. Package backend (tar dans /tmp)
       - name: Package backend
         run: |
           cd backend
           tar -czf /tmp/gestocol-backend.tar.gz .
 
-      # 7. Configurer SSH
+      # 5. Configurer SSH
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
-      # 8. Ajouter le serveur aux known_hosts
+      # 6. Ajouter le serveur aux known_hosts
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      # 9. Déploiement frontend
+      # 7. Déploiement frontend
       - name: Upload frontend static
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "rm -rf /var/www/gestocol/*"
           scp -r frontend/build/* ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/gestocol/
 
-      # 10. Upload backend tar.gz
+      # 8. Upload backend tar.gz
       - name: Upload backend archive
         run: |
           scp /tmp/gestocol-backend.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/gestocol-backend.tar.gz
-      # 11. Déploiement backend + rollback + gestion venv & .env
+
+      # 9. Déploiement backend en PROD avec python3 système
       - name: Deploy backend
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<'EOF'
             set -e
-          
+
             BACKEND_DIR="/opt/gestocol/backend"
             BACKUP_DIR="/opt/gestocol/backup"
             TMP_ARCHIVE="/tmp/gestocol-backend.tar.gz"
             LOG_PATH="$BACKEND_DIR/backend.log"
-          
+
             echo "📦 Sauvegarde du backend actuel..."
             mkdir -p "$BACKUP_DIR"
             if [ -d "$BACKEND_DIR" ]; then
               rm -rf "$BACKUP_DIR/backup_backend"
               cp -r "$BACKEND_DIR" "$BACKUP_DIR/backup_backend"
             fi
-          
+
             echo "🗑 Suppression de l'ancien backend..."
             rm -rf "$BACKEND_DIR"
-          
+
             echo "📤 Déploiement du nouveau backend..."
             mkdir -p "$BACKEND_DIR"
             tar -xzf "$TMP_ARCHIVE" -C "$BACKEND_DIR"
-          
+
             echo "🌿 Création du fichier .env"
             cat > "$BACKEND_DIR/.env" <<ENV_EOF
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
@@ -105,32 +93,32 @@ jobs:
           POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           ENV_EOF
-          
-          echo "🖥 Création / activation du venv et installation deps"
-          rm -rf "$BACKEND_DIR/venv"
-          python3 -m venv "$BACKEND_DIR/venv"
-          source "$BACKEND_DIR/venv/bin/activate"
-          pip install --upgrade pip
-          pip install -r "$BACKEND_DIR/requirements.txt"
-          
-          echo "🚀 Arrêt du backend s'il tourne et libération du port 8083"
-          pkill -f "uvicorn.*gestocol" || true
-          sudo fuser -k 8083/tcp || true
-          
-          echo "🚀 Lancement du backend FastAPI avec nohup"
-          nohup "$BACKEND_DIR/venv/bin/uvicorn" main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
-          
-          sleep 5
-          if pgrep -f "uvicorn.*gestocol" > /dev/null; then
-          echo "✅ Backend lancé correctement. Logs -> $LOG_PATH"
-          else
-          echo "❌ Échec du démarrage du backend, rollback..."
-          if [ -d "$BACKUP_DIR/backup_backend" ]; then
-          rm -rf "$BACKEND_DIR"
-          mv "$BACKUP_DIR/backup_backend" "$BACKEND_DIR"
-          source "$BACKEND_DIR/venv/bin/activate"
-          nohup "$BACKEND_DIR/venv/bin/uvicorn" main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
-          echo "✅ Backend rollback lancé en nohup. Logs -> $LOG_PATH"
-          fi
-          fi
+
+            echo "🖥 Création / activation du venv avec python3 système"
+            rm -rf "$BACKEND_DIR/venv"
+            python3 -m venv "$BACKEND_DIR/venv"
+            source "$BACKEND_DIR/venv/bin/activate"
+            pip install --upgrade pip
+            pip install -r "$BACKEND_DIR/requirements.txt"
+
+            echo "🚀 Arrêt du backend s'il tourne et libération du port 8083"
+            pkill -f "uvicorn.*gestocol" || true
+            sudo fuser -k 8083/tcp || true
+
+            echo "🚀 Lancement du backend FastAPI avec nohup"
+            nohup "$BACKEND_DIR/venv/bin/python" -m uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
+
+            sleep 5
+            if pgrep -f "uvicorn.*gestocol" > /dev/null; then
+              echo "✅ Backend lancé correctement. Logs -> $LOG_PATH"
+            else
+              echo "❌ Échec du démarrage du backend, rollback..."
+              if [ -d "$BACKUP_DIR/backup_backend" ]; then
+                rm -rf "$BACKEND_DIR"
+                mv "$BACKUP_DIR/backup_backend" "$BACKEND_DIR"
+                source "$BACKEND_DIR/venv/bin/activate"
+                nohup "$BACKEND_DIR/venv/bin/python" -m uvicorn main:app --host 0.0.0.0 --port 8083 > "$LOG_PATH" 2>&1 &
+                echo "✅ Backend rollback lancé en nohup. Logs -> $LOG_PATH"
+              fi
+            fi
           EOF

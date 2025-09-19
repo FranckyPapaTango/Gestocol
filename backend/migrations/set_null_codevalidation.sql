@@ -31,3 +31,7 @@ ON DELETE SET NULL;
 -- penser donc au besoin à supprimer cette contrainte !!!!
 ALTER TABLE codevalidation ALTER COLUMN css_raw_color_code DROP NOT NULL;
 
+ALTER TABLE colis ALTER COLUMN css_raw_color_code DROP NOT NULL;
+
+ALTER TABLE type_physique ALTER COLUMN css_raw_color_code DROP NOT NULL;
+
